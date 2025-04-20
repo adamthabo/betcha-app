@@ -1,25 +1,45 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 
 export default function App() {
   const [wagers, setWagers] = useState([]);
-  const [text, setText] = useState('');
+  const [newWager, setNewWager] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchWagers = async () => {
-    const { data, error } = await supabase.from('wagers').select('*');
-    if (!error) setWagers(data);
+    setLoading(true);
+    const { data, error } = await supabase.from('wagers').select('*').order('id', { ascending: false });
+    if (error) {
+      console.error('Error fetching wagers:', error.message);
+      setError(error.message);
+    } else {
+      setWagers(data);
+      setError(null);
+    }
+    setLoading(false);
   };
 
-  const createWager = async () => {
-    if (!text) return;
-    await supabase.from('wagers').insert({ description: text, status: 'open' });
-    setText('');
-    fetchWagers();
+  const addWager = async () => {
+    if (!newWager.trim()) return;
+    const { error } = await supabase.from('wagers').insert({ description: newWager, status: 'open' });
+    if (error) {
+      console.error('Error adding wager:', error.message);
+      setError(error.message);
+    } else {
+      setNewWager('');
+      fetchWagers();
+    }
   };
 
   const settleWager = async (id) => {
-    await supabase.from('wagers').update({ status: 'settled' }).eq('id', id);
-    fetchWagers();
+    const { error } = await supabase.from('wagers').update({ status: 'settled' }).eq('id', id);
+    if (error) {
+      console.error('Error settling wager:', error.message);
+      setError(error.message);
+    } else {
+      fetchWagers();
+    }
   };
 
   useEffect(() => {
@@ -27,28 +47,49 @@ export default function App() {
   }, []);
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
+    <main style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '600px', margin: '0 auto' }}>
       <h1>🎲 Betcha</h1>
-      <input
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Enter your wager"
-      />
-      <button onClick={createWager}>Make Bet</button>
+      <p>Make a wager. Settle it. Keep it fun.</p>
 
-      <h2>Active Wagers</h2>
-      <ul>
-        {wagers.map((wager) => (
-          <li key={wager.id}>
-            {wager.description} – <strong>{wager.status}</strong>
-            {wager.status === 'open' && (
-              <button onClick={() => settleWager(wager.id)} style={{ marginLeft: 8 }}>
-                Settle
-              </button>
-            )}
-          </li>
-        ))}
-      </ul>
-    </div>
+      <div style={{ marginBottom: '1rem' }}>
+        <input
+          value={newWager}
+          onChange={(e) => setNewWager(e.target.value)}
+          placeholder="Enter a wager..."
+          style={{ padding: '0.5rem', width: '70%' }}
+        />
+        <button onClick={addWager} style={{ padding: '0.5rem 1rem', marginLeft: '0.5rem' }}>
+          Add
+        </button>
+      </div>
+
+      {loading ? (
+        <p>Loading wagers...</p>
+      ) : error ? (
+        <p style={{ color: 'red' }}>⚠️ {error}</p>
+      ) : wagers.length === 0 ? (
+        <p>No wagers yet. Be the first!</p>
+      ) : (
+        <ul>
+          {wagers.map((w) => (
+            <li key={w.id} style={{ marginBottom: '0.5rem' }}>
+              {w.description} – <strong>{w.status}</strong>
+              {w.status === 'open' && (
+                <button
+                  onClick={() => settleWager(w.id)}
+                  style={{ marginLeft: '1rem', padding: '0.25rem 0.5rem' }}
+                >
+                  Settle
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <footer style={{ marginTop: '3rem', fontSize: '0.9rem', opacity: 0.6 }}>
+        Developed by Field Trip LLC
+      </footer>
+    </main>
   );
 }
