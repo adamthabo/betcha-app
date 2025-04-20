@@ -63,7 +63,7 @@ export default function App() {
 
   return (
     <main style={{ padding: '2rem', fontFamily: 'Arial, sans-serif', maxWidth: '600px', margin: '0 auto' }}>
-      <h1>🎉 Betcha App Is Live</h1>
+      <h1></h1>Betcha</h1>
 
       <div style={{ marginBottom: '1rem' }}>
         <input
