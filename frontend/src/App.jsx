@@ -99,7 +99,7 @@ export default function App() {
       </ul>
 
       <footer style={{ marginTop: '3rem', fontSize: '0.9rem', opacity: 0.6 }}>
-        Developed by Field Trip LLC
+        A Field Trip adVenture
       </footer>
     </main>
   );
